@@ -28,6 +28,13 @@ module RedmineProjectThemes
         base.class_eval do
           unloadable
           
+          def get_theme
+            setting = ThemeChangerUserSetting.find_theme_by_user_id(User.current.id)
+            return Setting.ui_theme unless setting
+            return Setting.ui_theme if setting.theme == ThemeChangerUserSetting::SYSTEM_SETTING
+            return setting.theme_name
+          end
+
           def current_theme
             
             #
@@ -35,13 +42,15 @@ module RedmineProjectThemes
             #   ..@current_theme is not set
             #   ..@project has changed
             #
-            unless instance_variable_defined?(:@current_theme) || instance_variable_defined?(:@current_project) && @current_project == @project
-              @current_project = @project
-              @current_theme   = (@project && @project.module_enabled?(:redmine_project_themes) && @project.theme.present?) ? @project.theme : Redmine::Themes.theme(Setting.ui_theme)
+            unless instance_variable_defined?(:@current_theme)
+              unless instance_variable_defined?(:@current_project) && @current_project == @project then
+                @current_project = @project
+                @current_theme  = (@project && @project.module_enabled?(:redmine_project_themes) && @project.theme.present?) ? @project.theme : Redmine::Themes.theme(get_theme)
+              else
+                @current_theme = Redmine::Themes.theme(get_theme)
+              end
             end
-            
             @current_theme
-              
           end #def
           
         end
